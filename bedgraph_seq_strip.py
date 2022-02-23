@@ -2,14 +2,18 @@
 
 import argparse
 
-def read_csv(csv_fyle):
+def read_bedgraph(bed_fyle):
+	#create list of coverage values, position dependent
 	return_dict = {}
-	with open(csv_fyle,"r") as inp:
-		firstline = inp.readline()
+	with open(bed_fyle,"r") as inp:
 		for line in inp:
-			coord = int(line.strip().split(',')[0])
-			strand = line.strip().split(',')[1]
-			return_dict[coord] = strand
+			coord = int(line.strip().split()[2])
+			delta = float(line.strip().split()[3])
+			if delta > 0:
+				strand = '+'
+			else:
+				strand = '-'
+			return_dict[coord] = [delta,strand]
 
 	return return_dict
 
@@ -30,15 +34,13 @@ def reverse_complement(seq):
 
 def seq_strip(sequence,pos,length,strand):
 	if strand == '+':
-		#return sequence[pos-(length):pos].replace('T','U')
 		return sequence[pos-(length):pos].replace('T','U')
 	else:
-		#return reverse_complement(sequence[pos-1:pos+length-1]).replace('T','U')
-		return sequence[pos-1:pos+length-1].replace('T','U')
+		return reverse_complement(sequence[pos-1:pos+length-1]).replace('T','U')
 
 def main():
-	parser = argparse.ArgumentParser(description='takes a CSV file, returns  set of sequences based on peaks')
-	parser.add_argument('csv',type=str,help='csv file to operate on')
+	parser = argparse.ArgumentParser(description='takes a Cv file, returns  set of sequences based on peaks')
+	parser.add_argument('bedgraph',type=str,help='bedgraph file to operate on')
 	parser.add_argument('genome',type=str,help='genomic fasta')
 	parser.add_argument('length',type=int,help='length of return sequences')
 	parser.add_argument('output',type=str,help='name of output file')
@@ -46,14 +48,14 @@ def main():
 	args = parser.parse_args()
 
 	sequence = genome_yield(args.genome)
-	peaks = read_csv(args.csv)
+	peaks = read_bedgraph(args.bedgraph)
 
 	final = {}
 	for key,value in peaks.items():
-		if value == '+':
-			final['>'+str(key)+','+str(value)] = seq_strip(sequence,key,args.length,'+')
+		if value[1] == '+':
+			final['>'+str(key)+','+str(value[0])+','+str(value[1])] = seq_strip(sequence,key,args.length,'+')
 		else:
-			final['>'+str(key)+','+str(value)] = seq_strip(sequence,key,args.length,'-')
+			final['>'+str(key)+','+str(value[0])+','+str(value[1])] = seq_strip(sequence,key,args.length,'-')
 
 	with open(args.output,'w') as outp:
 		for key,value in final.items():

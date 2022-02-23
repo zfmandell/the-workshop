@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import sys
 
 with open(sys.argv[1],'r') as inp:
@@ -8,3 +10,6 @@ with open(sys.argv[1],'r') as inp:
             inversed = delta*-1
             contents[3] = str(inversed)
             outp.write('\t'.join(contents)+'\n')
+
+
+
